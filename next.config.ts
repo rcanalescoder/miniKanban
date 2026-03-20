@@ -1,5 +1,12 @@
 import type { NextConfig } from "next";
 
+const repositorioGitHub = process.env.GITHUB_REPOSITORY?.split("/")[1] ?? "";
+const esRepositorioUsuario = repositorioGitHub.endsWith(".github.io");
+const rutaBaseGitHubPages =
+  process.env.GH_PAGES === "true" && repositorioGitHub && !esRepositorioUsuario
+    ? `/${repositorioGitHub}`
+    : "";
+
 const cabecerasSeguridad = [
   {
     key: "Content-Security-Policy",
@@ -44,20 +51,34 @@ const cabecerasSeguridad = [
   }
 ] as const;
 
-const configuracionNext: NextConfig = {
+const configuracionBase: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  output: process.env.GH_PAGES === "true" ? "export" : undefined,
+  trailingSlash: process.env.GH_PAGES === "true",
+  images: {
+    unoptimized: true
+  },
+  basePath: rutaBaseGitHubPages,
+  assetPrefix: rutaBaseGitHubPages || undefined,
   compiler: {
     removeConsole: process.env.NODE_ENV === "production"
-  },
-  async headers() {
-    return [
-      {
-        source: "/(.*)",
-        headers: [...cabecerasSeguridad]
-      }
-    ];
   }
 };
+
+const configuracionNext: NextConfig =
+  process.env.GH_PAGES === "true"
+    ? configuracionBase
+    : {
+        ...configuracionBase,
+        async headers() {
+          return [
+            {
+              source: "/(.*)",
+              headers: [...cabecerasSeguridad]
+            }
+          ];
+        }
+      };
 
 export default configuracionNext;
