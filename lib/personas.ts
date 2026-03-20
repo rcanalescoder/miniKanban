@@ -1,4 +1,10 @@
 import type { BorradorPersona, Persona, Tarea } from "@/tipos/tareas";
+import {
+  limpiarTextoPlano,
+  limitesSeguridad,
+  limitarColeccion,
+  normalizarUrlImagen
+} from "@/lib/seguridad";
 
 export const almacenamientoPersonas = "miniKanban.personas";
 
@@ -64,11 +70,13 @@ export function crearPersonaDesdeBorrador(
   borrador: BorradorPersona,
   indiceColor: number
 ): Persona {
+  const nombre = limpiarTextoPlano(borrador.nombre, limitesSeguridad.nombreMaximo);
+
   return {
     identificador: generarIdentificadorPersona(),
-    nombre: borrador.nombre.trim(),
-    area: borrador.area.trim(),
-    foto: borrador.foto.trim() || crearFotoAvatar(borrador.nombre, indiceColor)
+    nombre,
+    area: limpiarTextoPlano(borrador.area, limitesSeguridad.areaMaxima),
+    foto: normalizarUrlImagen(borrador.foto) || crearFotoAvatar(nombre, indiceColor)
   };
 }
 
@@ -107,10 +115,23 @@ export function obtenerIdentificadorPersonaAleatorio(personas: Persona[]) {
 }
 
 export function normalizarPersonas(personas: Persona[]) {
-  return personas.map((persona, indice) => ({
-    ...persona,
-    foto: persona.foto?.trim() || crearFotoAvatar(persona.nombre, indice)
-  }));
+  return limitarColeccion(personas, limitesSeguridad.personasMaximas).map(
+    (persona, indice) => {
+      const nombre = limpiarTextoPlano(persona?.nombre, limitesSeguridad.nombreMaximo);
+      const area = limpiarTextoPlano(persona?.area, limitesSeguridad.areaMaxima);
+
+      return {
+        identificador: limpiarTextoPlano(
+          persona?.identificador,
+          limitesSeguridad.nombreMaximo
+        ) || generarIdentificadorPersona(),
+        nombre: nombre || `Persona ${indice + 1}`,
+        area: area || "Área no definida",
+        foto:
+          normalizarUrlImagen(persona?.foto) || crearFotoAvatar(nombre || "Persona", indice)
+      };
+    }
+  );
 }
 
 export function sincronizarTareasConPersonas(tareas: Tarea[], personas: Persona[]) {

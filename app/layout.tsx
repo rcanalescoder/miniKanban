@@ -4,7 +4,8 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "gestor básico de tareas",
-  description: "Demo Kanban ligera y visual para equipos de alto rendimiento"
+  description: "Demo Kanban ligera y visual para equipos de alto rendimiento",
+  referrer: "no-referrer"
 };
 
 type PropiedadesLayout = Readonly<{

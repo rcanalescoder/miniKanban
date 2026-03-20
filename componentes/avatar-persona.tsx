@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { crearFotoAvatar } from "@/lib/personas";
+import { normalizarUrlImagen } from "@/lib/seguridad";
 
 type PropiedadesAvatarPersona = {
   nombre: string;
@@ -27,11 +28,13 @@ export function AvatarPersona({
   }, [foto]);
 
   const fotoSegura = useMemo(() => {
-    if (!foto || huboError) {
+    const urlNormalizada = normalizarUrlImagen(foto);
+
+    if (!urlNormalizada || huboError) {
       return crearFotoAvatar(nombre, 3);
     }
 
-    return foto;
+    return urlNormalizada;
   }, [foto, huboError, nombre]);
 
   return (
@@ -39,6 +42,8 @@ export function AvatarPersona({
       src={fotoSegura}
       alt={nombre}
       loading="lazy"
+      decoding="async"
+      referrerPolicy="no-referrer"
       onError={() => setHuboError(true)}
       className={`${clasesTamano[tamano]} border border-white/70 bg-white object-cover shadow-sm`}
     />

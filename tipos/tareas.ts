@@ -7,15 +7,20 @@ export const estadosKanban = [
 
 export type EstadoKanban = (typeof estadosKanban)[number];
 
-export type PrioridadTarea = "BAJA" | "MEDIA" | "ALTA" | "URGENTE";
+export const prioridadesTarea = ["BAJA", "MEDIA", "ALTA", "URGENTE"] as const;
 
-export type TipoTarea =
-  | "Reunion"
-  | "Analisis"
-  | "Planificacion"
-  | "Seguimiento"
-  | "Documentacion"
-  | "Coordinacion";
+export type PrioridadTarea = (typeof prioridadesTarea)[number];
+
+export const tiposTarea = [
+  "Reunion",
+  "Analisis",
+  "Planificacion",
+  "Seguimiento",
+  "Documentacion",
+  "Coordinacion"
+] as const;
+
+export type TipoTarea = (typeof tiposTarea)[number];
 
 export type OrdenTablero =
   | "manual"

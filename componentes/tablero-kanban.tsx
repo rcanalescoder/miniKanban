@@ -21,9 +21,15 @@ import {
   crearTareaDesdeBorrador,
   moverTarea,
   normalizarIndices,
+  normalizarTareasPersistidas,
   obtenerSiguienteIndice,
   tareasEjemplo
 } from "@/lib/tareas";
+import {
+  limpiarTextoPlano,
+  limitesSeguridad,
+  limitarColeccion
+} from "@/lib/seguridad";
 import {
   type BorradorTarea,
   type BorradorPersona,
@@ -136,7 +142,12 @@ export function TableroKanban() {
     try {
       const recuperadas = JSON.parse(almacenamiento) as Tarea[];
       setTareas(
-        normalizarIndices(sincronizarTareasConPersonas(recuperadas, personasBase))
+        normalizarIndices(
+          sincronizarTareasConPersonas(
+            normalizarTareasPersistidas(recuperadas),
+            personasBase
+          )
+        )
       );
     } catch {
       setTareas(sincronizarTareasConPersonas(tareasEjemplo, personasBase));
@@ -242,7 +253,7 @@ export function TableroKanban() {
   }
 
   function guardarTituloRapido(identificador: string, titulo: string) {
-    const tituloLimpio = titulo.trim();
+    const tituloLimpio = limpiarTextoPlano(titulo, limitesSeguridad.tituloMaximo);
 
     if (!tituloLimpio) {
       setMensajeSistema({ tipo: "error", texto: "El título no puede quedar vacío." });
@@ -281,10 +292,18 @@ export function TableroKanban() {
   }
 
   function crearDesdeCargaRapida(configuracion: ConfiguracionCargaRapida) {
-    const titulos = configuracion.lineas
-      .split("\n")
-      .map((linea) => linea.replace(/^[\s*-]+/, "").trim())
-      .filter(Boolean);
+    const titulos = limitarColeccion(
+      configuracion.lineas
+        .split("\n")
+        .map((linea) =>
+          limpiarTextoPlano(
+            linea.replace(/^[\s*-]+/, ""),
+            limitesSeguridad.tituloMaximo
+          )
+        )
+        .filter(Boolean),
+      limitesSeguridad.lineasCargaRapidaMaximas
+    );
 
     if (titulos.length === 0) {
       setMensajeSistema({

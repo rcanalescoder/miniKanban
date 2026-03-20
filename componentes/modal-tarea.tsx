@@ -2,6 +2,12 @@
 
 import { useState, type ReactNode } from "react";
 import {
+  limpiarTextoMultilinea,
+  limpiarTextoPlano,
+  limitesSeguridad,
+  normalizarUrlNavegable
+} from "@/lib/seguridad";
+import {
   type BorradorTarea,
   type EstadoKanban,
   type Persona,
@@ -75,7 +81,10 @@ export function ModalTarea(propiedades: PropiedadesModalTarea) {
   }
 
   function guardar() {
-    if (!formulario.titulo.trim()) {
+    const titulo = limpiarTextoPlano(formulario.titulo, limitesSeguridad.tituloMaximo);
+    const enlace = formulario.enlace.trim();
+
+    if (!titulo) {
       setError("El título es obligatorio.");
       return;
     }
@@ -85,11 +94,19 @@ export function ModalTarea(propiedades: PropiedadesModalTarea) {
       return;
     }
 
+    if (enlace && !normalizarUrlNavegable(enlace)) {
+      setError("El enlace debe usar https:// o una ruta relativa segura.");
+      return;
+    }
+
     const borradorNormalizado = {
       ...formulario,
-      titulo: formulario.titulo.trim(),
-      enlace: formulario.enlace.trim(),
-      observaciones: formulario.observaciones.trim()
+      titulo,
+      enlace,
+      observaciones: limpiarTextoMultilinea(
+        formulario.observaciones,
+        limitesSeguridad.observacionesMaximas
+      )
     };
 
     if (propiedades.modo === "crear") {
@@ -132,6 +149,7 @@ export function ModalTarea(propiedades: PropiedadesModalTarea) {
               value={formulario.titulo}
               onChange={(evento) => actualizarCampo("titulo", evento.target.value)}
               className="campo-formulario"
+              maxLength={limitesSeguridad.tituloMaximo}
               placeholder="Ejemplo: Preparar reunión de dirección"
             />
           </EtiquetaCampo>
@@ -203,6 +221,7 @@ export function ModalTarea(propiedades: PropiedadesModalTarea) {
               value={formulario.enlace}
               onChange={(evento) => actualizarCampo("enlace", evento.target.value)}
               className="campo-formulario"
+              maxLength={2048}
               placeholder="https://..."
             />
           </EtiquetaCampo>
@@ -232,6 +251,7 @@ export function ModalTarea(propiedades: PropiedadesModalTarea) {
                 actualizarCampo("observaciones", evento.target.value)
               }
               className="campo-formulario min-h-32 resize-none"
+              maxLength={limitesSeguridad.observacionesMaximas}
               placeholder="Anota contexto, acuerdos o próximos pasos..."
             />
           </EtiquetaCampo>

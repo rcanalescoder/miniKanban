@@ -6,9 +6,20 @@ import {
   type Persona,
   type PrioridadTarea,
   type SentidoOrden,
-  type Tarea
+  type Tarea,
+  estadosKanban,
+  prioridadesTarea,
+  tiposTarea
 } from "@/tipos/tareas";
 import { obtenerIdentificadorPersonaAleatorio } from "@/lib/personas";
+import {
+  limpiarTextoMultilinea,
+  limpiarTextoPlano,
+  limitesSeguridad,
+  limitarColeccion,
+  normalizarEnteroSeguro,
+  normalizarUrlNavegable
+} from "@/lib/seguridad";
 
 const jerarquiaPrioridad: Record<PrioridadTarea, number> = {
   BAJA: 0,
@@ -43,12 +54,50 @@ export function crearTareaDesdeBorrador(
   borrador: BorradorTarea,
   indiceOrden: number
 ): Tarea {
+  const titulo = limpiarTextoPlano(borrador.titulo, limitesSeguridad.tituloMaximo);
+
   return {
     identificador: generarIdentificador(),
     fechaCreacion: new Date().toISOString(),
     indiceOrden,
-    ...borrador
+    titulo,
+    tipo: tiposTarea.includes(borrador.tipo) ? borrador.tipo : "Planificacion",
+    prioridad: prioridadesTarea.includes(borrador.prioridad)
+      ? borrador.prioridad
+      : "MEDIA",
+    fechaDeseableFin: normalizarFechaDia(borrador.fechaDeseableFin),
+    observaciones: limpiarTextoMultilinea(
+      borrador.observaciones,
+      limitesSeguridad.observacionesMaximas
+    ),
+    enlace: normalizarUrlNavegable(borrador.enlace),
+    estado: estadosKanban.includes(borrador.estado) ? borrador.estado : "DEFINIDO",
+    personaAsignadaId: limpiarTextoPlano(borrador.personaAsignadaId, 40)
   };
+}
+
+export function normalizarTareasPersistidas(tareas: Tarea[]) {
+  return limitarColeccion(tareas, limitesSeguridad.tareasMaximas).map((tarea) => ({
+    identificador:
+      limpiarTextoPlano(tarea?.identificador, 40) || generarIdentificador(),
+    fechaCreacion: normalizarFechaIso(tarea?.fechaCreacion),
+    titulo:
+      limpiarTextoPlano(tarea?.titulo, limitesSeguridad.tituloMaximo) ||
+      "Tarea sin título",
+    tipo: tiposTarea.includes(tarea?.tipo) ? tarea.tipo : "Planificacion",
+    prioridad: prioridadesTarea.includes(tarea?.prioridad)
+      ? tarea.prioridad
+      : "MEDIA",
+    fechaDeseableFin: normalizarFechaDia(tarea?.fechaDeseableFin),
+    observaciones: limpiarTextoMultilinea(
+      tarea?.observaciones,
+      limitesSeguridad.observacionesMaximas
+    ),
+    enlace: normalizarUrlNavegable(tarea?.enlace),
+    estado: estadosKanban.includes(tarea?.estado) ? tarea.estado : "DEFINIDO",
+    personaAsignadaId: limpiarTextoPlano(tarea?.personaAsignadaId, 40),
+    indiceOrden: normalizarEnteroSeguro(tarea?.indiceOrden)
+  }));
 }
 
 export function obtenerSiguienteIndice(tareas: Tarea[], estado: EstadoKanban) {
@@ -172,6 +221,28 @@ function compararFechas(fechaA: string, fechaB: string) {
   }
 
   return new Date(fechaA).getTime() - new Date(fechaB).getTime();
+}
+
+function normalizarFechaIso(valor: unknown) {
+  if (typeof valor !== "string") {
+    return new Date().toISOString();
+  }
+
+  const fecha = new Date(valor);
+
+  if (Number.isNaN(fecha.getTime())) {
+    return new Date().toISOString();
+  }
+
+  return fecha.toISOString();
+}
+
+function normalizarFechaDia(valor: unknown) {
+  if (typeof valor !== "string") {
+    return "";
+  }
+
+  return /^\d{4}-\d{2}-\d{2}$/.test(valor.trim()) ? valor.trim() : "";
 }
 
 export function agruparPorEstado(

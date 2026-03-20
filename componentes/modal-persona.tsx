@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { AvatarPersona } from "@/componentes/avatar-persona";
 import { crearBorradorPersona, crearFotoAvatar } from "@/lib/personas";
+import { limpiarTextoPlano, limitesSeguridad, normalizarUrlImagen } from "@/lib/seguridad";
 import type { BorradorPersona } from "@/tipos/tareas";
 
 type PropiedadesModalPersona = {
@@ -27,20 +28,29 @@ export function ModalPersona({ onCerrar, onGuardar }: PropiedadesModalPersona) {
   }
 
   function guardar() {
-    if (!formulario.nombre.trim()) {
+    const nombre = limpiarTextoPlano(formulario.nombre, limitesSeguridad.nombreMaximo);
+    const area = limpiarTextoPlano(formulario.area, limitesSeguridad.areaMaxima);
+    const foto = formulario.foto.trim();
+
+    if (!nombre) {
       setError("El nombre es obligatorio.");
       return;
     }
 
-    if (!formulario.area.trim()) {
+    if (!area) {
       setError("El área es obligatoria.");
       return;
     }
 
+    if (foto && !normalizarUrlImagen(foto)) {
+      setError("La foto debe ser una URL https segura o dejarse vacía.");
+      return;
+    }
+
     onGuardar({
-      nombre: formulario.nombre.trim(),
-      area: formulario.area.trim(),
-      foto: formulario.foto.trim()
+      nombre,
+      area,
+      foto
     });
   }
 
@@ -73,6 +83,7 @@ export function ModalPersona({ onCerrar, onGuardar }: PropiedadesModalPersona) {
                 value={formulario.nombre}
                 onChange={(evento) => actualizarCampo("nombre", evento.target.value)}
                 className="campo-formulario"
+                maxLength={limitesSeguridad.nombreMaximo}
                 placeholder="Ejemplo: Lucía"
               />
             </label>
@@ -83,6 +94,7 @@ export function ModalPersona({ onCerrar, onGuardar }: PropiedadesModalPersona) {
                 value={formulario.area}
                 onChange={(evento) => actualizarCampo("area", evento.target.value)}
                 className="campo-formulario"
+                maxLength={limitesSeguridad.areaMaxima}
                 placeholder="Ejemplo: Marketing"
               />
             </label>
@@ -95,6 +107,7 @@ export function ModalPersona({ onCerrar, onGuardar }: PropiedadesModalPersona) {
                 value={formulario.foto}
                 onChange={(evento) => actualizarCampo("foto", evento.target.value)}
                 className="campo-formulario"
+                maxLength={2048}
                 placeholder="https://... o dejar vacío para avatar automático"
               />
             </label>

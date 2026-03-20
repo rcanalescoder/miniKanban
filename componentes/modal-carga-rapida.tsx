@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { limitesSeguridad } from "@/lib/seguridad";
 import {
   type ConfiguracionCargaRapida,
   type EstadoKanban,
@@ -81,6 +82,7 @@ export function ModalCargaRapida({
               value={configuracion.lineas}
               onChange={(evento) => actualizarCampo("lineas", evento.target.value)}
               className="campo-formulario min-h-44 resize-none"
+              maxLength={limitesSeguridad.lineasCargaRapidaMaximas * 160}
               placeholder={`- Preparar reunión de coordinación
 - Revisar planificación trimestral
 - Redactar propuesta inicial`}
