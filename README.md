@@ -126,6 +126,25 @@ Si ese puerto estuviera ocupado, Next.js usará otro puerto disponible y lo indi
 npm run build
 ```
 
+## Despliegue en GitHub Pages
+
+El repositorio ya incluye un workflow listo en `.github/workflows/deploy-pages.yml`.
+
+Pasos:
+
+1. Sube el proyecto a GitHub.
+2. Comprueba que la rama principal del repo es `main`.
+3. En GitHub entra en `Settings > Pages`.
+4. En `Build and deployment`, selecciona `Source: GitHub Actions`.
+5. Haz `push` a `main` y GitHub ejecutará el workflow automáticamente.
+6. Cuando termine, la web quedará publicada en GitHub Pages.
+
+La URL será normalmente una de estas:
+- `https://usuario.github.io/` si el repositorio se llama `usuario.github.io`
+- `https://usuario.github.io/nombre-del-repo/` si es un repositorio de proyecto
+
+Si tu rama principal no se llama `main`, cambia ese nombre dentro de `.github/workflows/deploy-pages.yml`.
+
 ## Persistencia
 
 La demo guarda datos en `localStorage`, por lo que:
